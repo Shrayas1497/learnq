@@ -56,17 +56,19 @@ app.get('/getInvoice', async (req, res) => {
 })
 
 async function getTotalInvoice(){
-  const tutors = await Tutor.findAll()
-  return tutors.map(tutor => {
-    return getInvoiceForTutor(tutor.tutor_id)
+  let tutors = await Tutor.findAll()
+  return await tutors.map(async tutor => {
+    return await getInvoiceForTutor(tutor.tutor_id)
+    
   })
+  
 }
 
 async function getInvoiceForTutor(tutorid){
   const classes = await sequelize.query("SELECT Classes.student_id, Classes.tutor_id, Classes.start_time, Classes.end_time, Classes.class_fee_per_hour, Classes.discount_rate, students.firstname AS sfirst, students.lastname AS slast, students.email FROM Classes, students WHERE Classes.student_id=students.student_id AND tutor_id=" + (''+tutorid))
 
   let uniqueStudents = [...new Set(classes[0].map(item => item.student_id))]
-  let students = [uniqueStudents.map(sid => {
+  let students = uniqueStudents.map(sid => {
     let hrs=0, amt=0.0, first='', last='', email='';
     classes[0].forEach(cls => {
       if(cls.student_id == sid) {
@@ -74,13 +76,14 @@ async function getInvoiceForTutor(tutorid){
         et = new Date(cls.end_time)
         hrs = hrs + date.subtract(et, st).toHours();
         amt = amt + hrs*cls.class_fee_per_hour*(1- cls.discount_rate/100)
-        first = cls.firstname
-        last = cls.lastname
+        first = cls.sfirst
+        last = cls.slast
         email = cls.email
       }
     })
+    
     return {first: first, last: last, email: email, hrs: hrs, amount: amt}
-  })]
+  })
  
   const tutor = await Tutor.findOne({
     where: {
