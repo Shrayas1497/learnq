@@ -28,7 +28,7 @@ app.get('/init', async (req, res) => {
   let ag2 = date.addHours(now, -2)
   past2hr = date.format(ag2, dtF)
  
-  let s1 = await ClassRow.create({ student_id: 1, tutor_id: 1, start_time: past2hr, end_time: past1hr,  class_fee_per_hour: 10, discount_rate: 5})
+  let s1 = await ClassRow.create({ student_id: 1, tutor_id: 1, start_time: past2hr, end_time: past1hr,  class_fee_per_hour: 100, discount_rate: 5})
 
   let s2 = await ClassRow.create({ student_id: 1, tutor_id: 2, start_time: date.format(date.addHours(now, -3), dtF), end_time: date.format(date.addHours(now, -2), dtF),  class_fee_per_hour: 10, discount_rate: 5})
 
@@ -51,17 +51,18 @@ app.get('/getInvoice', async (req, res) => {
   if(req.query.tutorId != undefined){
     result = await getInvoiceForTutor(req.query.tutorId)
   }
-  result = await getTotalInvoice()
+  else result = await getTotalInvoice()
   res.json(result)
 })
 
 async function getTotalInvoice(){
   let tutors = await Tutor.findAll()
-  return await tutors.map(async tutor => {
-    return await getInvoiceForTutor(tutor.tutor_id)
-    
-  })
-  
+  let results=[]
+  for(let i=0;i<tutors.length;i++){
+    let result= await getInvoiceForTutor(tutors[i].tutor_id)
+    results.push(result)
+  }
+  return results
 }
 
 async function getInvoiceForTutor(tutorid){
